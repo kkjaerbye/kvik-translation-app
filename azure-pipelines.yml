@@ -1,0 +1,36 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: NODE_VERSION
+    value: '20.x'
+  - group: deployment-variables # Create this in Azure DevOps to store VITE_DEEPL_API_KEY
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: $(NODE_VERSION)
+    displayName: 'Install Node.js'
+
+  - script: |
+      npm ci
+    displayName: 'Install dependencies'
+
+  - script: |
+      echo "VITE_DEEPL_API_KEY=$(VITE_DEEPL_API_KEY)" > .env
+    displayName: 'Create environment file'
+
+  - script: |
+      npm run build
+    displayName: 'Build application'
+
+  - task: AzureStaticWebApp@0
+    inputs:
+      app_location: '/dist'
+      api_location: ''
+      output_location: ''
+      azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APP_TOKEN)
+    displayName: 'Deploy to Azure Static Web Apps'
